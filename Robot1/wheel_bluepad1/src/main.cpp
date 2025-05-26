@@ -13,7 +13,7 @@ SoftwareSerial openCVRX(15, 4);
 Adafruit_MPU6050 mpu;
 
 int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, actuatorState = 0, espState = 1, pwm = 0;
-int shootingAngle = 0;
+int shooterAngle = 0;
 // espState 0 = Offline; 1 = Controller offline; 2 = opencv_offline; 999 = OK
 
 bool L1 = false, R1 = false, joystickConnected = false;
