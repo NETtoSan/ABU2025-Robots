@@ -13,6 +13,7 @@ SoftwareSerial openCVRX(15, 4);
 Adafruit_MPU6050 mpu;
 
 int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, actuatorState = 0, espState = 1, pwm = 0;
+int shootingAngle = 0;
 // espState 0 = Offline; 1 = Controller offline; 2 = opencv_offline; 999 = OK
 
 bool L1 = false, R1 = false, joystickConnected = false;
@@ -57,28 +58,6 @@ void dumpGamepad(ControllerPtr ctl) {
     Y = map(ctl->throttle(), 0, 1023, 0, 512) - map(ctl->brake(), 0, 1023, 0, 512); // Use L2 and R2 for rotation control
     dpadState = ctl -> dpad();
     buttons = ctl->buttons();
-    /*
-    Serial.printf(
-        "idx=%d, dpad: 0x%02x, buttons: 0x%04x, X: %4d, Y: %4d, rot: %4d, axis RY: %4d, brake: %4d, throttle: %4d, "
-        "misc: 0x%02x, gyro x:%6d y:%6d z:%6d, accel x:%6d y:%6d z:%6d\n",
-        ctl->index(),        // Controller Index
-        ctl->dpad(),         // D-pad
-        ctl->buttons(),      // bitmask of pressed buttons
-        ctl->axisX(),                   // X Axis
-        ctl->axisY(),                   // Y Axis
-        ctl->axisRX(),                 // Rotation (right X Axis)
-        ctl->axisRY(),       // (-511 - 512) right Y axis
-        ctl->brake(),        // (0 - 1023): brake button
-        ctl->throttle(),     // (0 - 1023): throttle (AKA gas) button
-        ctl->miscButtons(),  // bitmask of pressed "misc" buttons
-        ctl->gyroX(),        // Gyro X
-        ctl->gyroY(),        // Gyro Y
-        ctl->gyroZ(),        // Gyro Z
-        ctl->accelX(),       // Accelerometer X
-        ctl->accelY(),       // Accelerometer Y
-        ctl->accelZ()        // Accelerometer Z
-    );
-    */
 }
 
 void processGamepad(ControllerPtr ctl) {
@@ -215,14 +194,6 @@ void testVariables(){
     }
 }
 
-void updateController(void *parameter){
-    while(true){
-        if(BP32.update()){
-            processGamepad(myControllers);
-        }
-        vTaskDelay(10/ portTICK_PERIOD_MS);
-    }
-}
 
 void receiveOpenCVData(void *parameter){
     unsigned long lastReceivedTime = millis();
@@ -234,7 +205,13 @@ void receiveOpenCVData(void *parameter){
             char buffer[50];
             int bytesRead = openCVRX.readBytesUntil('\n', buffer, sizeof(buffer) - 1);
             buffer[bytesRead] = '\0'; // Null-terminate the string
-            Serial.printf("Received from OpenCV: %s\n", buffer);
+
+            int basketballX = 0, basketballY = 0, padX = 0, padY = 0;
+            if (sscanf(buffer, "%d %d %d %d", &basketballX, &basketballY, &padX, &padY) == 4) {
+                // Successfully extracted 4 integers into basketballX, basketballY, padX, padY
+                // You can use these variables as needed
+            }
+
             lastReceivedTime = millis();
             printedNotAvailable = false;
             if (espState == 2) espState = 999; // Reset state if previously set to 2
@@ -281,7 +258,6 @@ void setup() {
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
     
-    //xTaskCreate(updateController, "Update Controller", 8192, NULL, 1, NULL);
     xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
 }
 
@@ -301,8 +277,6 @@ void loop() {
     if(myControllers && myControllers -> isConnected()){
         processGamepad(myControllers);
     }
-
-    //testVariables();
     // Count variable packets for sync
     if(count >= 100){
         count = 0;
@@ -310,20 +284,13 @@ void loop() {
         count++;
     }   
 
-    static int shooterAngle = 0;
+    shooterAngle = static_cast<int>(pitch);
 
     // Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
     //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
 
 
     sendMotorData(X, Y, rot, count, joystickConnected); // Send data to the wheel
-    
-    /*
-    //Write UART to wheel
-    char buffer[50];
-    snprintf(buffer, sizeof(buffer), "%d %d %d %d %d\n", X, Y, rot, 0, 0);
-    wheelTX.write(buffer);
-    */
 
    // Write UART to top body
                                                //var1      , 2 , 3 , 4  , 5          , 6    , 7
