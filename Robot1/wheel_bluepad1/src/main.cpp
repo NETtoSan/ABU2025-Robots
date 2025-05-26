@@ -12,7 +12,7 @@ SoftwareSerial openCVRX(15, 4);
 
 Adafruit_MPU6050 mpu;
 
-int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, pistonState = 0, espState = 1, pwm = 0;
+int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, actuatorState = 0, espState = 1, pwm = 0;
 // espState 0 = Offline; 1 = Controller offline; 2 = opencv_offline; 999 = OK
 
 bool L1 = false, R1 = false, joystickConnected = false;
@@ -113,6 +113,7 @@ void processGamepad(ControllerPtr ctl) {
     rot = (abs(rot) < deadzone) ? 0 : rot;
     
 
+    // Control PWM based on D-pad
     if (dpadState & 0x01) { // Button UP is pressed
         if (pwm < 255) {
             pwm += 5;
@@ -140,7 +141,9 @@ void processGamepad(ControllerPtr ctl) {
         L1 = false;
     }
 
-    if (buttons & 0x02) { // Check if the O button is pressed
+    // Control solenoid state based on O button
+    oButtonState = buttons & 0x02; // O button is pressed
+    /*if (buttons & 0x02) { // Check if the O button is pressed
         static unsigned long CirclelastPressTime = 0;
         unsigned long currentCircleTime = millis();
         if (currentCircleTime - CirclelastPressTime > 200) { // Debounce delay (200ms)
@@ -148,15 +151,18 @@ void processGamepad(ControllerPtr ctl) {
           CirclelastPressTime = currentCircleTime;
         }
     }
+    */
 
+
+    // Control linear actuator from A and Y button
     if (buttons & 0x01){
-        pistonState = -1;
+        actuatorState = -1;
     }
     else if(buttons & 0x08){
-        pistonState = 1;
+        actuatorState = 1;
     }
     else{
-        pistonState = 0;
+        actuatorState = 0;
     }
 }
 
@@ -282,15 +288,15 @@ void setup() {
 void loop() {
     digitalWrite(2, HIGH);
 
+    // Calculate pitch and yaw from accelerometer data
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
-
-    // Calculate pitch and yaw from accelerometer data
     float pitch = atan2(a.acceleration.y, sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
     float yaw = atan2(a.acceleration.x, sqrt(a.acceleration.y * a.acceleration.y + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
     pitch = 90.0f + pitch ; // Adjust so pitch=0 becomes 90
     Serial.printf("%.2f %.2f\n", pitch, yaw);
 
+    // Process controllers
     BP32.update();
     if(myControllers && myControllers -> isConnected()){
         processGamepad(myControllers);
@@ -299,18 +305,19 @@ void loop() {
     //testVariables();
     // Count variable packets for sync
     if(count >= 100){
-      count = 0;
+        count = 0;
     } else {
-      count++;
-    }
+        count++;
+    }   
 
-   static int shooterAngle = 0;
+    static int shooterAngle = 0;
 
     // Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
-   //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
+    //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
 
 
     sendMotorData(X, Y, rot, count, joystickConnected); // Send data to the wheel
+    
     /*
     //Write UART to wheel
     char buffer[50];
@@ -320,7 +327,7 @@ void loop() {
 
    // Write UART to top body
                                                //var1      , 2 , 3 , 4  , 5          , 6    , 7
-    topbodyTX.printf("%d %d %d %d %d %d %d\n", oButtonState, L1, R1, pwm, pistonState, count, espState);
+    topbodyTX.printf("%d %d %d %d %d %d %d\n", oButtonState, L1, R1, pwm, actuatorState, count, espState);
     topbodyTX.flush();
     digitalWrite(2, LOW);
     delay(50);
