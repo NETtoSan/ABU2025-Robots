@@ -18,7 +18,7 @@ int maxAngle = 50;
 
 float yaw = 0;
 
-int basketballX = 0, basketballY = 0, padX = 0, padY = 0, angleTarget = 40;
+int basketballX = 0, basketballY = 0, padX = 0, padY = 0, angleTarget = 90;
 // espState 0 = Offline; 1 = Controller offline; 2 = opencv_offline; 999 = OK
 
 bool L1 = false, R1 = false, joystickConnected = false;
@@ -250,7 +250,7 @@ void readAngle(void *parameter){
         pitch = 90.0f + pitch ; // Adjust so pitch=0 becomes 90
         shooterAngle = static_cast<int>(pitch);
 
-        vTaskDelay(50 / portTICK_PERIOD_MS); // Delay to avoid blocking
+        vTaskDelay(100 / portTICK_PERIOD_MS); // Delay to avoid blocking
     }
 }
 
@@ -280,14 +280,19 @@ void setup() {
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
     
-    xTaskCreate(readAngle, "Read Angle", 4096, NULL, 1, NULL);
+    xTaskCreate(readAngle, "Read Angle", 8192, NULL, 1, NULL);
     xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
 }
 
 void loop() {
     digitalWrite(2, HIGH);
 
+    if (angleTarget < 0){
+        angleTarget = -1 * angleTarget;
+    }
+
     Serial.printf("%d %.2f       |        %d %d %d %d | %d\n", shooterAngle, yaw, basketballX, basketballY, padX, padY, angleTarget);
+    
 
     // Process controllers
     BP32.update();
@@ -302,7 +307,7 @@ void loop() {
     }   
 
     
-
+    /*
     if (shooterAngle != angleTarget) {
         if (shooterAngle < angleTarget) {
             actuatorState = -1; // Move actuator up
@@ -313,6 +318,8 @@ void loop() {
     else{
         actuatorState = 0; // Stop the actuator if angle matches target
     }
+    */
+   
     // Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
     //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
 
