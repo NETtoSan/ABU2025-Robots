@@ -208,8 +208,7 @@ void receiveOpenCVData(void *parameter){
 
             int basketballX = 0, basketballY = 0, padX = 0, padY = 0;
             if (sscanf(buffer, "%d %d %d %d", &basketballX, &basketballY, &padX, &padY) == 4) {
-                // Successfully extracted 4 integers into basketballX, basketballY, padX, padY
-                // You can use these variables as needed
+                Serial.printf("%d %d %d %d\n", basketballX, basketballY, padX, padY);
             }
 
             lastReceivedTime = millis();
