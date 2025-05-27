@@ -244,6 +244,8 @@ void setup() {
     BP32.enableVirtualDevice(false);
 
     pinMode(2, OUTPUT);
+    
+    openCVRX.begin(15200);
     topbodyTX.begin(15200);
     wheelTX.begin(15200);
 
@@ -269,7 +271,7 @@ void loop() {
     float pitch = atan2(a.acceleration.y, sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
     float yaw = atan2(a.acceleration.x, sqrt(a.acceleration.y * a.acceleration.y + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
     pitch = 90.0f + pitch ; // Adjust so pitch=0 becomes 90
-    Serial.printf("%.2f %.2f\n", pitch, yaw);
+    //Serial.printf("%.2f %.2f\n", pitch, yaw);
 
     // Process controllers
     BP32.update();
