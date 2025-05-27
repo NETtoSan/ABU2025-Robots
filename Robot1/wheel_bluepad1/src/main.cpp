@@ -14,6 +14,11 @@ Adafruit_MPU6050 mpu;
 
 int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, actuatorState = 0, espState = 1, pwm = 0;
 int shooterAngle = 0;
+int maxAngle = 50;
+
+float yaw = 0;
+
+int basketballX = 0, basketballY = 0, padX = 0, padY = 0, angleTarget = 40;
 // espState 0 = Offline; 1 = Controller offline; 2 = opencv_offline; 999 = OK
 
 bool L1 = false, R1 = false, joystickConnected = false;
@@ -206,9 +211,9 @@ void receiveOpenCVData(void *parameter){
             int bytesRead = openCVRX.readBytesUntil('\n', buffer, sizeof(buffer) - 1);
             buffer[bytesRead] = '\0'; // Null-terminate the string
 
-            int basketballX = 0, basketballY = 0, padX = 0, padY = 0;
-            if (sscanf(buffer, "%d %d %d %d", &basketballX, &basketballY, &padX, &padY) == 4) {
-                Serial.printf("%d %d %d %d\n", basketballX, basketballY, padX, padY);
+
+            if (sscanf(buffer, "%d %d %d %d %d", &basketballX, &basketballY, &padX, &padY, &angleTarget) == 4) {
+                //Serial.printf("%d %d %d %d\n", basketballX, basketballY, padX, padY);
             }
 
             lastReceivedTime = millis();
@@ -229,7 +234,23 @@ void receiveOpenCVData(void *parameter){
                 }
             }
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+}
+
+void readAngle(void *parameter){
+    while(true){
+        // Calculate pitch and yaw from accelerometer data
+        sensors_event_t a, g, temp;
+        mpu.getEvent(&a, &g, &temp);
+
+        float pitch = atan2(a.acceleration.y, sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
+        yaw = atan2(a.acceleration.x, sqrt(a.acceleration.y * a.acceleration.y + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
+
+        pitch = 90.0f + pitch ; // Adjust so pitch=0 becomes 90
+        shooterAngle = static_cast<int>(pitch);
+
+        vTaskDelay(50 / portTICK_PERIOD_MS); // Delay to avoid blocking
     }
 }
 
@@ -259,19 +280,14 @@ void setup() {
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
     
+    xTaskCreate(readAngle, "Read Angle", 4096, NULL, 1, NULL);
     xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
 }
 
 void loop() {
     digitalWrite(2, HIGH);
 
-    // Calculate pitch and yaw from accelerometer data
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
-    float pitch = atan2(a.acceleration.y, sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
-    float yaw = atan2(a.acceleration.x, sqrt(a.acceleration.y * a.acceleration.y + a.acceleration.z * a.acceleration.z)) * 180.0f / PI;
-    pitch = 90.0f + pitch ; // Adjust so pitch=0 becomes 90
-    //Serial.printf("%.2f %.2f\n", pitch, yaw);
+    Serial.printf("%d %.2f       |        %d %d %d %d | %d\n", shooterAngle, yaw, basketballX, basketballY, padX, padY, angleTarget);
 
     // Process controllers
     BP32.update();
@@ -285,8 +301,18 @@ void loop() {
         count++;
     }   
 
-    shooterAngle = static_cast<int>(pitch);
+    
 
+    if (shooterAngle != angleTarget) {
+        if (shooterAngle < angleTarget) {
+            actuatorState = -1; // Move actuator up
+        } else if (shooterAngle > angleTarget) {
+            actuatorState = 1; // Move actuator down
+        }
+    }
+    else{
+        actuatorState = 0; // Stop the actuator if angle matches target
+    }
     // Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
     //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
 
