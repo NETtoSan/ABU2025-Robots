@@ -169,37 +169,6 @@ void sendMotorData(int X, int Y, int rot, int val1, int val2) {
     wheelTX.flush();
 } 
 
-void testVariables(){
-    static unsigned long lastUpdateTime = 0;
-    static int state = 0;
-
-    unsigned long currentTime = millis();
-
-    if (currentTime - lastUpdateTime >= 2000) { // 2 seconds interval
-        lastUpdateTime = currentTime;
-
-        switch (state) {
-            case 0:
-                X = 255;
-                state = 1;
-                break;
-            case 1:
-                X = -255;
-                state = 2;
-                break;
-            case 2:
-                Y = 255;
-                state = 3;
-                break;
-            case 3:
-                Y = -255;
-                state = 0;
-                break;
-        }
-    }
-}
-
-
 void receiveOpenCVData(void *parameter){
     unsigned long lastReceivedTime = millis();
     unsigned long notAvailableStart = 0;
@@ -307,7 +276,7 @@ void loop() {
     }   
 
     
-    /*
+    /* Control shooter actuator based on angleTarget
     if (shooterAngle != angleTarget) {
         if (shooterAngle < angleTarget) {
             actuatorState = -1; // Move actuator up
@@ -326,7 +295,9 @@ void loop() {
 
     sendMotorData(X, Y, rot, count, joystickConnected); // Send data to the wheel
 
-   // Write UART to top body
+    openCVRX.printf("%d\n", shooterAngle); // Send shooter angle back to OpenCV
+    openCVRX.flush();
+    // Write UART to top body
                                                //var1      , 2 , 3 , 4  , 5          , 6    , 7
     topbodyTX.printf("%d %d %d %d %d %d %d\n", oButtonState, L1, R1, pwm, actuatorState, count, espState);
     topbodyTX.flush();
