@@ -8,13 +8,16 @@ SoftwareSerial wheelTX(16, 17);
 SoftwareSerial topbodyTX(5, 18);
 
 int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, pwm = 0;
-bool L1 = false, R1 = false, joystickConnected = false;
+int L1 = 0, R1 = 0;
+bool joystickConnected = false;
 static bool oButtonState = false; // State of the O button, or B button
 int count = 0;
 
-void sendMotorData(int X, int Y, int rot, int val1, int val2, int L1, int R1) {
+void sendMotorData(int X, int Y, int rot, int val1, int val2, bool L1, bool R1) {
     uint8_t header = 0xAA; // Start-of-frame marker
-    int values[5] = {X, Y, rot, val1, val2}; // Array of integers to send
+    int values[7] = {X, Y, rot, val1, val2, L1, R1}; // Array of integers to send
+
+    Serial.printf("%d %d %d %d %d %d %d\n", X, Y, rot, val1, val2, L1, R1);
 
     // Calculate checksum (simple sum of all bytes)
     uint8_t checksum = header;
@@ -101,7 +104,7 @@ void ProcessGamepad(GamepadPtr myGamepad){
     X = myGamepad->axisX();
     Y = -1 * (myGamepad->axisY());
     rot = myGamepad->axisRX();
-
+    buttons = myGamepad -> buttons();
     // Apply dead zone calibration
     if (X > -30 && X < 30) {
         X = 0;

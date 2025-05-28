@@ -5,7 +5,7 @@
 #define HEADER 0xAA
 #define MSG_LENGTH 22  // 1 (header) + 20 (5 ints) + 1 (checksum)
 
-int X = 0, Y = 0, rot = 0, V1 = 0, V2 = 0;
+int X = 0, Y = 0, rot = 0, V1 = 0, V2 = 0, L1 = 0, R1 = 0;
 
 Motor motorFL(2, 3);
 Motor motorFR(4, 5);
@@ -48,11 +48,16 @@ void receiveMotorData() {
         if (calcChecksum == buffer[MSG_LENGTH - 1]) {
           int* intValues = (int*)(buffer + 1);
 
+          Serial.println("Assigning values");
+
           X = intValues[0];
           Y = intValues[2];
           rot = intValues[4];
           V1 = intValues[6];
           V2 = intValues[8];
+          R1 = intValues[10];
+          L1 = intValues[12];
+          
         }
 
         index = 0; // Reset for next message
@@ -86,7 +91,12 @@ void loop() {
   Serial.print(Y);
   Serial.print(", rot: ");
   Serial.print(rot);
+  Serial.print(", L1: ");
+  Serial.print(L1);
+  Serial.print(", R1: ");
+  Serial.print(R1);
   Serial.print(", ");
+
 
   if (X > 0) {
     Serial.print("Right ");
