@@ -12,6 +12,14 @@ Motor motorFR(4, 5);
 Motor motorBL(6, 7);
 Motor motorBR(8, 9);
 
+int shootUpA = 22;
+int shootUpB = 23;
+int shootUpPWM = 11;
+
+int shootDownA = 24;
+int shootDownB = 25;
+int shootDownPWM = 10;
+
 void receiveMotorData() {
   static uint8_t buffer[MSG_LENGTH];
   static uint8_t index = 0;

@@ -12,7 +12,7 @@ bool L1 = false, R1 = false, joystickConnected = false;
 static bool oButtonState = false; // State of the O button, or B button
 int count = 0;
 
-void sendMotorData(int X, int Y, int rot, int val1, int val2) {
+void sendMotorData(int X, int Y, int rot, int val1, int val2, int L1, int R1) {
     uint8_t header = 0xAA; // Start-of-frame marker
     int values[5] = {X, Y, rot, val1, val2}; // Array of integers to send
 
@@ -139,7 +139,8 @@ void loop() {
         ProcessGamepad(myControllers);
         controlButtons();
 
-        sendMotorData(X, Y, rot, count, joystickConnected); // Send data to the wheel
+        sendMotorData(X, Y, rot, count, joystickConnected, L1, R1); // Send data to the wheel
+        
         //topbodyTX.printf("%d %d %d %d %d %d %d\n", oButtonState, L1, R1, pwm, 0, count, 1);
         delay(10);
     
