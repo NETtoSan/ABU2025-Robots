@@ -4,31 +4,30 @@
 #include <SoftwareSerial.h>
 ControllerPtr myControllers;
 
-SoftwareSerial wheelTX(16, 17);
-SoftwareSerial topbodyTX(5, 18);
+SoftwareSerial wheelTX(5, 18);
+SoftwareSerial topbodyTX(99, 99);
 
 int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, pwm = 0;
-int L1 = 0, R1 = 0;
+bool L1 = 0, R1 = 0;
 bool joystickConnected = false;
 static bool oButtonState = false; // State of the O button, or B button
 int count = 0;
 
-void sendMotorData(int X, int Y, int rot, int val1, int val2, bool L1, bool R1) {
+void sendMotorData(int X, int Y, int rot, int val1, int val2, int var3, int var4) {
+    
+    int values[7] = {X, Y, rot, val1, val2, var3, var4}; // Array of integers
+
     uint8_t header = 0xAA; // Start-of-frame marker
-    int values[7] = {X, Y, rot, val1, val2, L1, R1}; // Array of integers to send
-
-    Serial.printf("%d %d %d %d %d %d %d\n", X, Y, rot, val1, val2, L1, R1);
-
     // Calculate checksum (simple sum of all bytes)
     uint8_t checksum = header;
     uint8_t* bytePtr = (uint8_t*)values; // Treat the array as a byte array
     for (size_t i = 0; i < sizeof(values); i++) {
         checksum += bytePtr[i];
     }
-
+    
     // Transmit the message
     wheelTX.write(header);                  // Send header
-    wheelTX.write((uint8_t*)values, sizeof(values)); // Send the 5 integers (20 bytes)
+    wheelTX.write((uint8_t*)values, sizeof(values)); // Send the 7 integers (14 bytes)
     wheelTX.write(checksum);                // Send checksum
 
     wheelTX.flush();
@@ -143,7 +142,7 @@ void loop() {
         controlButtons();
 
         sendMotorData(X, Y, rot, count, joystickConnected, L1, R1); // Send data to the wheel
-        
+
         //topbodyTX.printf("%d %d %d %d %d %d %d\n", oButtonState, L1, R1, pwm, 0, count, 1);
         delay(10);
     

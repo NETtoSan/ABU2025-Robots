@@ -3,7 +3,7 @@
 
 #define BAUD_RATE 15200
 #define HEADER 0xAA
-#define MSG_LENGTH 22  // 1 (header) + 20 (5 ints) + 1 (checksum)
+#define MSG_LENGTH 30  // 1 (header) + 28 (7 ints) + 1 (checksum)
 
 int X = 0, Y = 0, rot = 0, V1 = 0, V2 = 0, L1 = 0, R1 = 0;
 
@@ -13,11 +13,11 @@ Motor motorBL(6, 7);
 Motor motorBR(8, 9);
 
 int shootUpA = 22;
-int shootUpB = 23;
+int shootUpB = 33;
 int shootUpPWM = 11;
 
 int shootDownA = 24;
-int shootDownB = 25;
+int shootDownB = 35;
 int shootDownPWM = 10;
 
 void receiveMotorData() {
@@ -48,15 +48,13 @@ void receiveMotorData() {
         if (calcChecksum == buffer[MSG_LENGTH - 1]) {
           int* intValues = (int*)(buffer + 1);
 
-          Serial.println("Assigning values");
-
           X = intValues[0];
           Y = intValues[2];
           rot = intValues[4];
           V1 = intValues[6];
           V2 = intValues[8];
-          R1 = intValues[10];
-          L1 = intValues[12];
+          L1 = intValues[10];
+          R1 = intValues[12];
           
         }
 
@@ -69,6 +67,14 @@ void receiveMotorData() {
 void setup() {
   Serial.begin(9600);       // Debug output
   Serial1.begin(BAUD_RATE); // Use Serial1 RX1 (pin 19)
+
+
+  pinMode(shootUpA, OUTPUT);
+  pinMode(shootUpB, OUTPUT);
+  pinMode(shootUpPWM, OUTPUT);
+  pinMode(shootDownA, OUTPUT);
+  pinMode(shootDownB, OUTPUT);
+  pinMode(shootDownPWM, OUTPUT);
 
   motorFL.initPins();
   motorFR.initPins();
@@ -141,5 +147,33 @@ void loop() {
   motorBL.driveMotors(speedBL);
   motorBR.driveMotors(speedBR);
   
+  if(L1 == 1){
+    digitalWrite(shootUpA, HIGH);
+    digitalWrite(shootUpB, LOW);
+    analogWrite(shootUpPWM, 255);
+
+    digitalWrite(shootDownA, HIGH);
+    digitalWrite(shootDownB, LOW);
+    analogWrite(shootDownPWM, 255);
+  }
+  else if(R1 == 1){
+    digitalWrite(shootUpA, LOW);
+    digitalWrite(shootUpB, HIGH);
+    analogWrite(shootUpPWM, 255);
+
+    digitalWrite(shootDownA, LOW);
+    digitalWrite(shootDownB, HIGH);
+    analogWrite(shootDownPWM, 255);
+  }
+  else{
+    digitalWrite(shootUpA, LOW);
+    digitalWrite(shootUpB, LOW);
+    analogWrite(shootUpPWM, 0);
+    
+    digitalWrite(shootDownA, LOW);
+    digitalWrite(shootDownB, LOW);
+    analogWrite(shootDownPWM, 0);
+  }
+
   delay(50);
 }
