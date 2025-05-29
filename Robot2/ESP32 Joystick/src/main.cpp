@@ -7,18 +7,19 @@ ControllerPtr myControllers;
 SoftwareSerial wheelTX(5, 18);
 SoftwareSerial topbodyTX(99, 99);
 
-int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, pwm = 0;
-bool L1 = 0, R1 = 0;
+int X = 0, Y = 0, rot = 0, dpadState = 0, buttons = 0, pwm = 0, actuatorState = 0;
+bool L1 = 0, R1 = 0, shoot = false;
 bool joystickConnected = false;
 static bool oButtonState = false; // State of the O button, or B button
 int count = 0;
 
 void sendMotorData(int X, int Y, int rot, int val1, int val2, int var3, int var4) {
     
-    int values[7] = {X, Y, rot, val1, val2, var3, var4}; // Array of integers
+    int values[9] = {X, Y, rot, val1, val2, var3, var4, shoot, actuatorState}; // Array of integers
 
     uint8_t header = 0xAA; // Start-of-frame marker
     // Calculate checksum (simple sum of all bytes)
+
     uint8_t checksum = header;
     uint8_t* bytePtr = (uint8_t*)values; // Treat the array as a byte array
     for (size_t i = 0; i < sizeof(values); i++) {
@@ -33,61 +34,33 @@ void sendMotorData(int X, int Y, int rot, int val1, int val2, int var3, int var4
     wheelTX.flush();
 } 
 
-void testVariables(){
-    static unsigned long lastUpdateTime = 0;
-    static int state = 0;
-
-    unsigned long currentTime = millis();
-
-    if (currentTime - lastUpdateTime >= 2000) { // 2 seconds interval
-        lastUpdateTime = currentTime;
-
-        switch (state) {
-            case 0:
-                X = 255;
-                state = 1;
-                break;
-            case 1:
-                X = -255;
-                state = 2;
-                break;
-            case 2:
-                Y = 255;
-                state = 3;
-                break;
-            case 3:
-                Y = -255;
-                state = 0;
-                break;
-        }
-    }
-}
-
 void controlButtons() {
-  count = (count + 1) % 100;
+    count = (count + 1) % 100;
 
-  const int deadzone = 30;
-  X = (abs(X = map(X, -512, 512, -255, 255)) < deadzone) ? 0 : X;
-  Y = (abs(Y = map(Y, -512, 512, -255, 255)) < deadzone) ? 0 : Y;
-  rot = (abs(rot = map(rot, -512, 512, -255, 255)) < deadzone) ? 0 : rot;
+    const int deadzone = 30;
+    X = (abs(X = map(X, -512, 512, -255, 255)) < deadzone) ? 0 : X;
+    Y = (abs(Y = map(Y, -512, 512, -255, 255)) < deadzone) ? 0 : Y;
+    rot = (abs(rot = map(rot, -512, 512, -255, 255)) < deadzone) ? 0 : rot;
 
-  if (dpadState & 0x01) { // Button UP is pressed
-    pwm = min(pwm + 5, 255);
-  } else if (dpadState & 0x02) { // Button DOWN is pressed
-    pwm = max(pwm - 5, 0);
-  }
-
-  R1 = buttons & 0x20;
-  L1 = buttons & 0x10;
-
-  if (buttons & 0x02) { // Check if the O button is pressed
-    static unsigned long lastPressTime = 0;
-    unsigned long currentTime = millis();
-    if (currentTime - lastPressTime > 200) { // Debounce delay (200ms)
-      oButtonState = !oButtonState; // Toggle the state
-      lastPressTime = currentTime;
+    if (dpadState & 0x01) { // Button UP is pressed
+        pwm = min(pwm + 5, 255);
+    } else if (dpadState & 0x02) { // Button DOWN is pressed
+        pwm = max(pwm - 5, 0);
     }
-  }
+
+    R1 = buttons & 0x20;
+    L1 = buttons & 0x10;
+    shoot = buttons & 0x02;
+
+    if (buttons & 0x01){
+        actuatorState = -1;
+    }
+    else if(buttons & 0x08){
+        actuatorState = 1;
+    }
+    else{
+        actuatorState = 0;
+    }
 }
 
 void onConnectedController(ControllerPtr controller) {
@@ -104,7 +77,9 @@ void ProcessGamepad(GamepadPtr myGamepad){
     Y = -1 * (myGamepad->axisY());
     rot = myGamepad->axisRX();
     buttons = myGamepad -> buttons();
+
     // Apply dead zone calibration
+
     if (X > -30 && X < 30) {
         X = 0;
     }
@@ -116,6 +91,7 @@ void ProcessGamepad(GamepadPtr myGamepad){
     }
     //Serial.printf("X: %d Y: %d\n", X, Y);
 }
+
 void setup() {
     Serial.begin(9600);
     Serial.printf("Firmware: %s\n", BP32.firmwareVersion());
