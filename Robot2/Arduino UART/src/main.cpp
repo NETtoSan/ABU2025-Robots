@@ -3,7 +3,7 @@
 
 #define BAUD_RATE 15200
 #define HEADER 0xAA
-#define MSG_LENGTH 38  // 1 (header) + 36 (9 ints) + 1 (checksum)
+#define MSG_LENGTH 30  // 1 (header) + 28 (7 ints) + 1 (checksum)
 
 int X = 0, Y = 0, rot = 0, V1 = 0, V2 = 0, L1 = 0, R1 = 0, actuatorState = 0;
 bool shootRelay = false;
@@ -27,7 +27,7 @@ int actuatorPWM = 0;
 
 // Change this to the correct pin numbers for your relays
 int shootRelayPin = 0;
-int blockRelayPin = 0;
+int blockRelayPin = 53;
 // ------------------------------------------------------
 
 void shout(){
@@ -98,13 +98,13 @@ void receiveMotorData() {
 
           X = intValues[0];
           Y = intValues[2];
-          rot = intValues[4];
+          rot = -1 * intValues[4];
           V1 = intValues[6];
           V2 = intValues[8];
           L1 = intValues[10];
           R1 = intValues[12];
-          shootRelay = intValues[14];
-          actuatorState = intValues[16];
+          //shootRelay = intValues[14];
+          //actuatorState = intValues[16];
         }
 
         index = 0; // Reset for next message
@@ -118,6 +118,7 @@ void setup() {
   Serial1.begin(BAUD_RATE); // Use Serial1 RX1 (pin 19)
 
 
+  pinMode(blockRelayPin, OUTPUT);
   pinMode(shootUpA, OUTPUT);
   pinMode(shootUpB, OUTPUT);
   pinMode(shootUpPWM, OUTPUT);
@@ -142,7 +143,7 @@ void loop() {
   shout(); // Print debug information
 
   // Calculate motor speeds based on X, Y, and rot
-  
+    
   int speedFL = Y + X + rot;
   int speedFR = Y - X - rot;
   int speedBL = Y - X + rot;
@@ -195,18 +196,21 @@ void loop() {
     digitalWrite(shootRelayPin, LOW); // Deactivate shoot relay
   }
 
-  if (actuatorState == 1) {
-    digitalWrite(actuatorPinA, HIGH);
-    digitalWrite(actuatorPinB, LOW);
-    analogWrite(actuatorPWM, 100); // Activate actuator to move up
-  } else if (actuatorState == -1) {
-    digitalWrite(actuatorPinA, LOW);
-    digitalWrite(actuatorPinB, HIGH);
-    analogWrite(actuatorPWM, 100); // Activate actuator to move down
+  if (R1 == 1) {
+    //digitalWrite(actuatorPinA, HIGH);
+    //digitalWrite(actuatorPinB, LOW);
+    digitalWrite(blockRelayPin, HIGH);
+    //analogWrite(actuatorPWM, 100); // Activate actuator to move up
+  } else if (L1 == -1) {
+    //digitalWrite(actuatorPinA, LOW);
+    //digitalWrite(actuatorPinB, HIGH);
+    digitalWrite(blockRelayPin, HIGH);
+    //analogWrite(actuatorPWM, 100); // Activate actuator to move down
   } else {
-    digitalWrite(actuatorPinA, LOW);
-    digitalWrite(actuatorPinB, LOW);
-    analogWrite(actuatorPWM, 0); // Stop actuator
+    //digitalWrite(actuatorPinA, LOW);
+    //digitalWrite(actuatorPinB, LOW);
+    digitalWrite(blockRelayPin, LOW);
+    //analogWrite(actuatorPWM, 0); // Stop actuator
   }
 
   delay(50);
