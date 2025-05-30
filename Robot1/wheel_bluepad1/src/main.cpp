@@ -263,7 +263,7 @@ void loop() {
         angleTarget = -1 * angleTarget;
     }
 
-    Serial.printf("%d %.2f       |        %d %d %d %d | %d\n", shooterAngle, yaw, basketballX, basketballY, padX, padY, angleTarget);
+    //Serial.printf("%d %.2f       |        %d %d %d %d | %d\n", shooterAngle, yaw, basketballX, basketballY, padX, padY, angleTarget);
     
 
     // Process controllers
@@ -292,8 +292,8 @@ void loop() {
     }
     */
    
-    // Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
-    //     count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
+    Serial.printf("Sending packet [%3d] %5d %5d %5d 0x%02x 0x%02x %d %d %5d\n",
+         count, X, Y, rot, dpadState, buttons, L1, R1, pwm);
 
 
     sendMotorData(X, Y, rot, count, joystickConnected); // Send data to the wheel
