@@ -230,7 +230,8 @@ void setup() {
     Serial.printf("BD Addr: %2X:%2X:%2X:%2X:%2X:%2X\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 
     BP32.setup(&onConnectedController, &onDisconnectedController);
-    //BP32.forgetBluetoothKeys();
+    
+    BP32.forgetBluetoothKeys();
     BP32.enableVirtualDevice(false);
 
     pinMode(2, OUTPUT);
@@ -245,10 +246,12 @@ void setup() {
             delay(10);
         }
     }
-    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-    mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
-    
+    else{
+        mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+        mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+        mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
+    }
+
     xTaskCreate(readAngle, "Read Angle", 8192, NULL, 1, NULL);
     xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
 }

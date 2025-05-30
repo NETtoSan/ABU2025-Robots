@@ -17,7 +17,8 @@ void receiveUARTTask(void *parameter) {
     uint32_t lastDataTime = millis(); // Track the last time data was received
 
     while (true) {
-        if (wheelRX.available() >= 22) { // Wait for 1 header + 20 data bytes + 1 checksum
+        try{
+            if (wheelRX.available() >= 22) { // Wait for 1 header + 20 data bytes + 1 checksum
             uint8_t header = wheelRX.read(); // Read the header
             if (header == 0xAA) { // Check if the header is correct
                 uint8_t buffer[20];
@@ -45,24 +46,51 @@ void receiveUARTTask(void *parameter) {
                     if(val2 == false){
                         Serial.printf("Joystick is not connected!\n");
                     }
-                    lastDataTime = millis();
-                } else {
-                    Serial.println("Checksum mismatch! Data corrupted.");
+                        lastDataTime = millis();
+                    } else {
+                        Serial.println("Checksum mismatch! Data corrupted.");
+                    }
+                }
+
+                // Check if no data has been received for 500 ms
+                else if (millis() - lastDataTime > 500) {
+                    X = 0; Y = 0; rot = 0;
+                    Serial.println("No UART data received for 500 ms.");
+                    lastDataTime = millis(); // Reset the timer to avoid repeated messages
                 }
             }
         }
-
-        // Check if no data has been received for 500 ms
-        else if (millis() - lastDataTime > 500) {
-            X = 0; Y = 0; rot = 0;
-            Serial.println("No UART data received for 500 ms.");
-            lastDataTime = millis(); // Reset the timer to avoid repeated messages
+        catch (const std::exception &e) {
+            Serial.printf("Error reading UART data: %s\n", e.what());
         }
 
         vTaskDelay(50/ portTICK_PERIOD_MS); // Add a small delay to avoid busy looping
     }
 }
 
+void shout(){
+    // Determine direction based on X and Y values
+    Serial.printf("[%3d %3d %3d] ", X, Y, rot);
+    if (Y > 0 && X == 0) {
+        Serial.println("Moving Forward");
+    } else if (Y < 0 && X == 0) {
+        Serial.println("Moving Backward");
+    } else if (X > 0 && Y == 0) {
+        Serial.println("Moving Right");
+    } else if (X < 0 && Y == 0) {
+        Serial.println("Moving Left");
+    } else if (X > 0 && Y > 0) {
+        Serial.println("Moving Top Right");
+    } else if (X < 0 && Y > 0) {
+        Serial.println("Moving Top Left");
+    } else if (X > 0 && Y < 0) {
+        Serial.println("Moving Bottom Right");
+    } else if (X < 0 && Y < 0) {
+        Serial.println("Moving Bottom Left");
+    } else if (X == 0 && Y == 0) {
+        Serial.println("Stationary");
+    }
+}
 void setup() {
     Serial.begin(9600); // For debugging
 
@@ -96,32 +124,18 @@ void loop() {
     int motrl = -1 * ((-X) - (-Y) + (rot)); // Rear Left
     int motrr = (-X) + (-Y) - (-rot); // Rear Right
 
-    // Determine direction based on X and Y values
-    Serial.printf("[%3d %3d %3d] ", X, Y, rot);
-    if (Y > 0 && X == 0) {
-        Serial.println("Moving Forward");
-    } else if (Y < 0 && X == 0) {
-        Serial.println("Moving Backward");
-    } else if (X > 0 && Y == 0) {
-        Serial.println("Moving Right");
-    } else if (X < 0 && Y == 0) {
-        Serial.println("Moving Left");
-    } else if (X > 0 && Y > 0) {
-        Serial.println("Moving Top Right");
-    } else if (X < 0 && Y > 0) {
-        Serial.println("Moving Top Left");
-    } else if (X > 0 && Y < 0) {
-        Serial.println("Moving Bottom Right");
-    } else if (X < 0 && Y < 0) {
-        Serial.println("Moving Bottom Left");
-    } else if (X == 0 && Y == 0) {
-        Serial.println("Stationary");
-    }
+    shout();
 
-    motor1.driveMotors(motfl);
-    motor2.driveMotors(motfr);
-    motor3.driveMotors(motrl);
-    motor4.driveMotors(motrr);
+    try{
+        // Suspected errors in motor control it may be the cause here.
+        motor1.driveMotors(motfl);
+        motor2.driveMotors(motfr);
+        motor3.driveMotors(motrl);
+        motor4.driveMotors(motrr);
+    }
+    catch (const std::exception &e){
+        Serial.printf("Error in motor control: %s\n", e.what());
+    }
 
     delay(25);
 }
