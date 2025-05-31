@@ -150,10 +150,10 @@ void loop() {
   int speedBR = Y + X - rot;
 
   // Constrain motor speeds to valid range (-255 to 255)
-  speedFL = -1 * (map(constrain(speedFL, -255, 255), -255, 255, -128, 128));
-  speedFR = -1 * (map(constrain(speedFR, -255, 255), -255, 255, -128, 128));
-  speedBL = -1 * (map(constrain(speedBL, -255, 255), -255, 255, -128, 128));
-  speedBR = -1 * (map(constrain(speedBR, -255, 255), -255, 255, -128, 128));
+  speedFL = -1 * (map(constrain(speedFL, -255, 255), -255, 255, -150, 150));
+  speedFR = -1 * (map(constrain(speedFR, -255, 255), -255, 255, -150, 150));
+  speedBL = -1 * (map(constrain(speedBL, -255, 255), -255, 255, -150, 150));
+  speedBR = -1 * (map(constrain(speedBR, -255, 255), -255, 255, -150, 150));
 
   // Drive motors with calculated speeds
   motorFL.driveMotors(speedFL);

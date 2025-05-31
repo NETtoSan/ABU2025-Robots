@@ -77,6 +77,7 @@ void processGamepad(ControllerPtr ctl) {
         colorIdx++;
     }
 
+    /*
     if (ctl->b()) {
         static int led = 0;
         led++;
@@ -86,10 +87,11 @@ void processGamepad(ControllerPtr ctl) {
     if (ctl->x()) {
         ctl->playDualRumble(0, 250, 0x80, 0x40);
     }
+    */
 
     const int deadzone = 30;
-    X = map(X, -512, 512, -127, 127);
-    Y = map(Y, -512, 512, -127, 127);
+    X = map(X, -512, 512, -200, 200);
+    Y = map(Y, -512, 512, -200, 200);
     rot = map(rot, -512, 512, -127, 127);
 
     //X = (abs(X) < deadzone) ? 0 : X;
@@ -114,7 +116,7 @@ void processGamepad(ControllerPtr ctl) {
     if (buttons == 0x30) {
         R1 = true;
         L1 = true;
-    } else if (buttons == 0x20) {
+    } else if (buttons  == 0x20) {
         R1 = true;
         L1 = false;
     } else if (buttons == 0x10) {
@@ -231,7 +233,7 @@ void setup() {
 
     BP32.setup(&onConnectedController, &onDisconnectedController);
     
-    BP32.forgetBluetoothKeys();
+    //BP32.forgetBluetoothKeys();
     BP32.enableVirtualDevice(false);
 
     pinMode(2, OUTPUT);
@@ -249,8 +251,8 @@ void setup() {
         mpu.setFilterBandwidth(MPU6050_BAND_5_HZ);
     }
 
-    xTaskCreate(readAngle, "Read Angle", 8192, NULL, 1, NULL);
-    xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
+    //xTaskCreate(readAngle, "Read Angle", 8192, NULL, 1, NULL);
+    //xTaskCreate(receiveOpenCVData, "Receive OpenCV Data", 8192, NULL, 1, NULL);
 }
 
 void loop() {
