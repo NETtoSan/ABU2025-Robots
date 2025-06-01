@@ -30,6 +30,7 @@ const unsigned long UART_TIMEOUT = 500;
 const int COUNTER_MAX = 10;
 bool stat2Ignore = false;
 
+
 // LCD and UART
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 SoftwareSerial debUART(RX_PIN, TX_PIN);
@@ -201,9 +202,7 @@ void checkUART() {
       Serial.print(" ");
       Serial.print(var6);
       Serial.print(" ");
-      Serial.print(var7);
-      Serial.print("  .  Current:");
-      Serial.println(analogRead(CS_1));
+      Serial.println(var7);
 
       showDisp(var1, var7);
       controlActuator(var5);
@@ -214,6 +213,8 @@ void checkUART() {
       lcd.setCursor(0, 1);
       lcd.print("ask net");
       Serial.println("Invalid data format");
+
+      var1 = 0; var2 = 0; var3 = 0; var4 = 0; var5 = 0; var6 = 0; var7 = 0;
     }
 
 

@@ -53,6 +53,7 @@ void onDisconnectedController(ControllerPtr ctl) {
         }
     }
     Serial.println("CALLBACK: Controller disconnected, but not found in myControllers");
+
 }
 
 void dumpGamepad(ControllerPtr ctl) {

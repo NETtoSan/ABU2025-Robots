@@ -189,29 +189,5 @@ void loop() {
     analogWrite(shootDownPWM, 0);
   }
 
-  
-  if (shootRelay) {
-    digitalWrite(shootRelayPin, HIGH); // Activate shoot relay
-  } else {
-    digitalWrite(shootRelayPin, LOW); // Deactivate shoot relay
-  }
-
-  if (R1 == 1) {
-    //digitalWrite(actuatorPinA, HIGH);
-    //digitalWrite(actuatorPinB, LOW);
-    digitalWrite(blockRelayPin, HIGH);
-    //analogWrite(actuatorPWM, 100); // Activate actuator to move up
-  } else if (L1 == -1) {
-    //digitalWrite(actuatorPinA, LOW);
-    //digitalWrite(actuatorPinB, HIGH);
-    digitalWrite(blockRelayPin, HIGH);
-    //analogWrite(actuatorPWM, 100); // Activate actuator to move down
-  } else {
-    //digitalWrite(actuatorPinA, LOW);
-    //digitalWrite(actuatorPinB, LOW);
-    digitalWrite(blockRelayPin, LOW);
-    //analogWrite(actuatorPWM, 0); // Stop actuator
-  }
-
   delay(50);
 }
